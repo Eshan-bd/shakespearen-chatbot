@@ -127,7 +127,7 @@ If Ollama is not running or no model is configured, the chatbot uses a compact l
 
 ## Baseline System
 
-`src/baseline.py` implements a simple comparison baseline. It retrieves the single most similar passage using local TF-IDF and returns that passage without a full generated explanation.
+`src/baseline.py` implements a simple comparison baseline using the same ChromaDB retriever as the RAG chatbot. It retrieves only the single most relevant passage and returns it without synthesising a beginner-friendly explanation.
 
 The improved system in `src/rag_chatbot.py` retrieves multiple passages from ChromaDB, builds a RAG prompt, and generates a beginner-friendly answer conditioned on those passages.
 
