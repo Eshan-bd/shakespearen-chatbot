@@ -5,7 +5,7 @@ RAW_DATA_DIR = PROJECT_ROOT / "data" / "raw"
 PROCESSED_DATA_DIR = PROJECT_ROOT / "data" / "processed"
 PROMPT_DIR = PROJECT_ROOT / "prompts"
 RESULTS_DIR = PROJECT_ROOT / "results"
-INDEX_PATH = RESULTS_DIR / "chroma_retriever.pkl"
+INDEX_PATH = RESULTS_DIR / "chroma_retriever.json"
 CHROMA_DIR = RESULTS_DIR / "chroma_db"
 
 PLAY_FILES = {

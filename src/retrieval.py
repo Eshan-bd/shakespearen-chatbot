@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-import pickle
+import re
 import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -45,10 +45,16 @@ class ChromaRetriever:
         self.persist_dir = Path(persist_dir)
         self.embedding_model_name = embedding_model_name
         self.backend = "chromadb"
-        self.collection_name = "shakespeare_chunks"
+        self.collection_name = f"shakespeare_{self._safe_name(embedding_model_name)}"
         self.client = chromadb.PersistentClient(path=str(self.persist_dir))
         self.collection = self.client.get_or_create_collection(self.collection_name)
-        self.model = SentenceTransformer(embedding_model_name)
+        try:
+            self.model = SentenceTransformer(embedding_model_name)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Could not load embedding model '{embedding_model_name}'. "
+                "Check your internet connection, or download/cache the model before running the system."
+            ) from exc
 
     def build_index(self, chunks: List[Chunk]) -> None:
         if not chunks:
@@ -89,20 +95,20 @@ class ChromaRetriever:
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("wb") as f:
-            pickle.dump({
-                "persist_dir": self.persist_dir,
-                "embedding_model_name": self.embedding_model_name,
-            }, f)
+        data = {
+            "persist_dir": str(self.persist_dir),
+            "embedding_model_name": self.embedding_model_name,
+            "collection_name": self.collection_name,
+        }
+        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
     @classmethod
     def load(cls, path: Path, embedding_model_name: str | None = None) -> "ChromaRetriever":
         from config import EMBEDDING_MODEL_NAME
 
-        with path.open("rb") as f:
-            data = pickle.load(f)
+        data = json.loads(path.read_text(encoding="utf-8"))
         model_name = embedding_model_name or data.get("embedding_model_name") or EMBEDDING_MODEL_NAME
-        return cls(data["persist_dir"], model_name)
+        return cls(Path(data["persist_dir"]), model_name)
 
     def _metadata(self, chunk: Chunk) -> Dict[str, Any]:
         return {
@@ -128,6 +134,13 @@ class ChromaRetriever:
             "keywords": json.loads(metadata.get("keywords") or "[]"),
             "metadata": metadata,
         }
+
+    def count(self) -> int:
+        return int(self.collection.count())
+
+    def _safe_name(self, value: str) -> str:
+        name = re.sub(r"[^A-Za-z0-9_]+", "_", value.lower()).strip("_")
+        return name[:50] or "default"
 
 
 EmbeddingRetriever = ChromaRetriever

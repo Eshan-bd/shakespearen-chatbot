@@ -137,7 +137,10 @@ def generate_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
 
 def build_retriever() -> EmbeddingRetriever:
     if INDEX_PATH.exists():
-        return EmbeddingRetriever.load(INDEX_PATH, EMBEDDING_MODEL_NAME)
+        retriever = EmbeddingRetriever.load(INDEX_PATH, EMBEDDING_MODEL_NAME)
+        if retriever.count() > 0:
+            return retriever
+
     records = load_all_plays()
     chunks = create_chunks(records)
     retriever = EmbeddingRetriever(CHROMA_DIR, EMBEDDING_MODEL_NAME)
