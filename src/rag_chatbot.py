@@ -14,27 +14,27 @@ from retrieval import EmbeddingRetriever
 Chunk = Dict[str, Any]
 
 STYLE_INTENTS = [
-    "write a creative Shakespearean style response",
-    "generate a stylised Elizabethan sounding answer",
-    "reply poetically in Shakespeare's voice",
-    "compose a short dramatic speech rather than factual evidence",
+    "Shakespearean tone",
+    "Shakespearean style",
+    "Shakespearean voice",
+    "Shakespearean language",
+    "Elizabethan tone",
+    "Elizabethan style",
+    "Elizabethan voice",
+    "bard style",
+    "bard voice",
+    "poetic diction",
+    "archaic diction",
+    "elevated diction",
+    "theatrical language",
+    "dramatic verse",
+    "dramatic monologue",
+    "early modern English",
+    "old English style",
+    "thou thee language",
+    "creative response",
+    "stylised response",
 ]
-
-STYLE_TOPICS = {
-    "Juliet's divided heart": [
-        "Juliet is conflicted between love for Romeo and loyalty to the Capulet family",
-        "a young woman loves someone from the enemy family",
-    ],
-    "Macbeth's troubled ambition": [
-        "Macbeth is driven by ambition, prophecy, murder, guilt, and the crown",
-        "a warrior is tempted to seize power and suffers for it",
-    ],
-    "Hamlet's grief and doubt": [
-        "Hamlet grieves his father, doubts Claudius, and struggles with revenge",
-        "a prince hesitates while thinking about death, proof, and revenge",
-    ],
-}
-
 
 def load_system_prompt() -> str:
     prompt_path = PROMPT_DIR / "system_prompt.txt"
@@ -126,28 +126,6 @@ def _semantic_score(query: str, phrases: List[str], model: Any) -> float:
 
 def _is_style_request(query: str, model: Any) -> bool:
     return _semantic_score(query, STYLE_INTENTS, model) >= SEMANTIC_SIMILARITY_THRESHOLD
-
-
-def _style_topic(query: str, retrieved: List[Tuple[Chunk, float]], model: Any) -> str:
-    evidence_text = " ".join(chunk.get("scene_summary") or chunk.get("text", "")[:300] for chunk, _ in retrieved[:3])
-    search_text = f"{query} {evidence_text}"
-    scores = {
-        topic: _semantic_score(search_text, phrases, model)
-        for topic, phrases in STYLE_TOPICS.items()
-    }
-    topic, score = max(scores.items(), key=lambda item: item[1])
-    return topic if score >= 0.30 else "this matter"
-
-
-def _stylised_answer(query: str, retrieved: List[Tuple[Chunk, float]], model: Any) -> str:
-    topic = _style_topic(query, retrieved, model)
-    return (
-        "Creative stylised response, not evidence:\n"
-        f"O, {topic}, where love and duty pull one soul in twain. "
-        "My heart would speak plain truth, yet fear and honour bind my tongue. "
-        "If joy be born from peril, then let wisdom guide it, lest sweet desire "
-        "turn bitter by the morning."
-    )
 
 
 def _ollama_answer(prompt: str) -> str | None:

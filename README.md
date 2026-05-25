@@ -105,7 +105,7 @@ For each question, the chatbot prints:
 - the generated answer;
 - a preview of the RAG prompt used to condition generation.
 
-Stylised-response detection uses semantic similarity between the user prompt and style-intent phrases, rather than direct keyword matching. The same embedding model is also used to select the closest stylised topic from the prompt and retrieved evidence.
+Stylised-response detection uses semantic similarity between the user prompt and broad noun-phrase intent labels such as Shakespearean tone, Elizabethan voice, bard style, poetic diction, and dramatic verse, rather than direct keyword matching. The same embedding model is also used to select the closest stylised topic from the prompt and retrieved evidence.
 
 Stylised generation uses `prompts/stylised_prompt.txt`, which keeps creative responses under 150 words and marks them as creative output rather than factual evidence.
 
