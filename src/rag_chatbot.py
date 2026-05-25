@@ -6,7 +6,7 @@ import re
 import urllib.request
 from typing import Any, Dict, List, Tuple
 
-from config import CHROMA_DIR, DEFAULT_TOP_K, EMBEDDING_MODEL_NAME, INDEX_PATH, PROMPT_DIR
+from config import CHROMA_DIR, DEFAULT_TOP_K, EMBEDDING_MODEL_NAME, INDEX_PATH, OLLAMA_MODEL, PROMPT_DIR
 from data_loader import load_all_plays
 from chunking import create_chunks, format_chunk_for_display
 from retrieval import EmbeddingRetriever
@@ -89,7 +89,7 @@ def _stylised_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
 
 
 def _ollama_answer(prompt: str) -> str | None:
-    model = os.getenv("OLLAMA_MODEL")
+    model = OLLAMA_MODEL
     if not model:
         return None
     payload = json.dumps({"model": model, "prompt": prompt, "stream": False}).encode("utf-8")
@@ -107,12 +107,15 @@ def _ollama_answer(prompt: str) -> str | None:
         return None
 
 def generate_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
-    slm_answer = _ollama_answer(build_rag_prompt(query, retrieved))
-    if slm_answer:
-        return slm_answer
+    answer = []
 
-    if any(word in query.lower() for word in ["stylised", "stylized", "shakespearean-style", "generate"]):
+    if any(word in query.lower() for word in ["stylised", "shakespearean"]):
         return _stylised_answer(query, retrieved)
+    else:
+        slm_answer = _ollama_answer(build_rag_prompt(query, retrieved))
+        if slm_answer:
+            answer.append(slm_answer)
+
 
     summaries = []
     for chunk, score in retrieved:
@@ -124,7 +127,7 @@ def generate_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
         return "The retrieved evidence is too limited for a confident answer."
 
     evidence_lines = _best_evidence_lines(query, retrieved)
-    answer = [
+    answer += [
         " ".join(dict.fromkeys(summaries[:3])),
         "",
         "Scene in focus: " + " ".join(dict.fromkeys(summaries[:3])),

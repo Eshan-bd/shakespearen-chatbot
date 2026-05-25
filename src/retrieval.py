@@ -10,23 +10,6 @@ from typing import Any, Dict, List, Tuple
 Chunk = Dict[str, Any]
 
 
-def expand_query(query: str) -> str:
-    q = query.lower()
-    extra: List[str] = []
-    rules = [
-        (["macbeth", "duncan"], "ambition prophecy crown king murder deed Lady Macbeth persuade"),
-        (["hamlet", "revenge"], "ghost Claudius proof play conscience delay father murder"),
-        (["who", "hamlet"], "Prince Denmark father ghost Claudius Gertrude revenge"),
-        (["montague", "capulet"], "feud brawl houses Romeo Juliet enemy ancient grudge"),
-        (["juliet", "romeo"], "Capulet Montague love enemy balcony family conflict"),
-        (["lady macbeth"], "wife ambition persuade Duncan murder guilt sleepwalking"),
-    ]
-    for terms, addition in rules:
-        if all(term in q for term in terms):
-            extra.append(addition)
-    return f"{query} {' '.join(extra)}".strip()
-
-
 class ChromaRetriever:
     def __init__(self, persist_dir: Path, embedding_model_name: str):
         try:
@@ -83,7 +66,10 @@ class ChromaRetriever:
             )
 
     def retrieve(self, query: str, top_k: int = 3) -> List[Tuple[Chunk, float]]:
-        query_embedding = self.model.encode([expand_query(query)], normalize_embeddings=True).tolist()[0]
+
+        # Expand query and generate a normalized vector embedding for semantic search
+        query_embedding = self.model.encode([query], normalize_embeddings=True).tolist()[0]
+
         result = self.collection.query(query_embeddings=[query_embedding], n_results=top_k)
 
         chunks = []
