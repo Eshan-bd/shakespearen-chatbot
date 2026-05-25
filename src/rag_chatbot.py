@@ -102,7 +102,7 @@ def _semantic_score(query: str, phrases: List[str], model: Any) -> float:
 
 
 def _is_style_request(query: str, model: Any) -> bool:
-    return _semantic_score(query, STYLE_INTENTS, model) >= 0.38
+    return _semantic_score(query, STYLE_INTENTS, model) >= SEMANTIC_SIMILARITY_THRESHOLD
 
 
 def _style_topic(query: str, retrieved: List[Tuple[Chunk, float]], model: Any) -> str:

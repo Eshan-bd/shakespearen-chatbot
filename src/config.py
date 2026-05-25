@@ -8,6 +8,7 @@ RESULTS_DIR = PROJECT_ROOT / "results"
 INDEX_PATH = RESULTS_DIR / "chroma_retriever.json"
 CHROMA_DIR = RESULTS_DIR / "chroma_db"
 OLLAMA_MODEL = "llama3.2:3b"
+SEMANTIC_SIMILARITY_THRESHOLD = 0.38
 
 PLAY_FILES = {
     "hamlet": RAW_DATA_DIR / "hamlet.json",
