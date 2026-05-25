@@ -19,12 +19,8 @@ def main() -> None:
     results = retriever.retrieve(query, top_k=DEFAULT_TOP_K)
 
     print(f"Retriever backend: {retriever.backend}")
-    print(f"Vector backend: {getattr(retriever, 'embedding_backend', 'unknown')}")
-    if INDEX_PATH.exists():
-        print(f"Saved Chroma index marker to: {INDEX_PATH}")
-        print(f"Chroma database directory: {CHROMA_DIR}")
-    else:
-        print("ChromaDB is not installed, so the temporary TF-IDF fallback was used.")
+    print(f"Saved Chroma index marker to: {INDEX_PATH}")
+    print(f"Chroma database directory: {CHROMA_DIR}")
     print("\nQuery:", query)
     print("\nTop retrieved chunks:\n")
 

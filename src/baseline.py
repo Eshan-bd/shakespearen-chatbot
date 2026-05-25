@@ -1,13 +1,54 @@
 from __future__ import annotations
 
+import math
+import re
+from collections import Counter
 from typing import Any, Dict, List, Tuple
+
+import numpy as np
 
 from chunking import create_chunks, format_chunk_for_display
 from data_loader import load_all_plays
-from retrieval import SimpleTfidfVectorizer
 
 
 Chunk = Dict[str, Any]
+
+
+class SimpleTfidfVectorizer:
+    def __init__(self, max_features: int = 12000) -> None:
+        self.max_features = max_features
+        self.vocab: Dict[str, int] = {}
+        self.idf: np.ndarray | None = None
+
+    def _tokens(self, text: str) -> List[str]:
+        return [w.lower() for w in re.findall(r"[A-Za-z][A-Za-z']+", text) if len(w) > 2]
+
+    def fit_transform(self, texts: List[str]) -> np.ndarray:
+        counts_list = [Counter(self._tokens(text)) for text in texts]
+        df = Counter()
+        for counts in counts_list:
+            df.update(counts.keys())
+        terms = [term for term, _ in df.most_common(self.max_features)]
+        self.vocab = {term: i for i, term in enumerate(terms)}
+        n_docs = max(1, len(texts))
+        self.idf = np.array([math.log((1 + n_docs) / (1 + df[t])) + 1 for t in terms])
+        return self._matrix(counts_list)
+
+    def transform(self, texts: List[str]) -> np.ndarray:
+        return self._matrix([Counter(self._tokens(text)) for text in texts])
+
+    def _matrix(self, counts_list: List[Counter]) -> np.ndarray:
+        matrix = np.zeros((len(counts_list), len(self.vocab)), dtype=np.float32)
+        for row, counts in enumerate(counts_list):
+            total = sum(counts.values()) or 1
+            for term, count in counts.items():
+                col = self.vocab.get(term)
+                if col is not None:
+                    matrix[row, col] = count / total
+        if self.idf is not None and matrix.size:
+            matrix *= self.idf
+        norms = np.linalg.norm(matrix, axis=1, keepdims=True)
+        return matrix / np.maximum(norms, 1e-12)
 
 
 class BaselineSystem:
