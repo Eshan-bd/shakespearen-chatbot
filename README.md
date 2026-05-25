@@ -104,6 +104,8 @@ For each question, the chatbot prints:
 - the generated answer;
 - a preview of the RAG prompt used to condition generation.
 
+Stylised-response detection uses semantic similarity between the user prompt and style-intent phrases, rather than direct keyword matching. The same embedding model is also used to select the closest stylised topic from the prompt and retrieved evidence.
+
 ## Language Model Interface
 
 The system includes an optional local SLM interface through Ollama. If `OLLAMA_MODEL` is set, `rag_chatbot.py` sends the RAG prompt to the local Ollama API.

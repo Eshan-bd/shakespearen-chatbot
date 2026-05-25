@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import urllib.request
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Sequence, Tuple
 
 from config import CHROMA_DIR, DEFAULT_TOP_K, EMBEDDING_MODEL_NAME, INDEX_PATH, OLLAMA_MODEL, PROMPT_DIR
 from data_loader import load_all_plays
@@ -13,6 +12,28 @@ from retrieval import EmbeddingRetriever
 
 
 Chunk = Dict[str, Any]
+
+STYLE_INTENTS = [
+    "write a creative Shakespearean style response",
+    "generate a stylised Elizabethan sounding answer",
+    "reply poetically in Shakespeare's voice",
+    "compose a short dramatic speech rather than factual evidence",
+]
+
+STYLE_TOPICS = {
+    "Juliet's divided heart": [
+        "Juliet is conflicted between love for Romeo and loyalty to the Capulet family",
+        "a young woman loves someone from the enemy family",
+    ],
+    "Macbeth's troubled ambition": [
+        "Macbeth is driven by ambition, prophecy, murder, guilt, and the crown",
+        "a warrior is tempted to seize power and suffers for it",
+    ],
+    "Hamlet's grief and doubt": [
+        "Hamlet grieves his father, doubts Claudius, and struggles with revenge",
+        "a prince hesitates while thinking about death, proof, and revenge",
+    ],
+}
 
 
 def load_system_prompt() -> str:
@@ -70,15 +91,33 @@ def _best_evidence_lines(query: str, retrieved: List[Tuple[Chunk, float]], limit
     return lines
 
 
-def _stylised_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
-    topic = "this matter"
-    lowered = query.lower()
-    if "juliet" in lowered:
-        topic = "Juliet's divided heart"
-    elif "macbeth" in lowered:
-        topic = "Macbeth's troubled ambition"
-    elif "hamlet" in lowered:
-        topic = "Hamlet's grief and doubt"
+def _cosine(a: Sequence[float], b: Sequence[float]) -> float:
+    return sum(x * y for x, y in zip(a, b))
+
+
+def _semantic_score(query: str, phrases: List[str], model: Any) -> float:
+    embeddings = model.encode([query, *phrases], normalize_embeddings=True)
+    query_embedding = embeddings[0]
+    return max(_cosine(query_embedding, phrase_embedding) for phrase_embedding in embeddings[1:])
+
+
+def _is_style_request(query: str, model: Any) -> bool:
+    return _semantic_score(query, STYLE_INTENTS, model) >= 0.38
+
+
+def _style_topic(query: str, retrieved: List[Tuple[Chunk, float]], model: Any) -> str:
+    evidence_text = " ".join(chunk.get("scene_summary") or chunk.get("text", "")[:300] for chunk, _ in retrieved[:3])
+    search_text = f"{query} {evidence_text}"
+    scores = {
+        topic: _semantic_score(search_text, phrases, model)
+        for topic, phrases in STYLE_TOPICS.items()
+    }
+    topic, score = max(scores.items(), key=lambda item: item[1])
+    return topic if score >= 0.30 else "this matter"
+
+
+def _stylised_answer(query: str, retrieved: List[Tuple[Chunk, float]], model: Any) -> str:
+    topic = _style_topic(query, retrieved, model)
     return (
         "Creative stylised response, not evidence:\n"
         f"O, {topic}, where love and duty pull one soul in twain. "
@@ -106,11 +145,15 @@ def _ollama_answer(prompt: str) -> str | None:
     except Exception:
         return None
 
-def generate_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
-    answer = []
 
-    if any(word in query.lower() for word in ["stylised", "shakespearean"]):
-        return _stylised_answer(query, retrieved)
+def generate_answer(query: str, retrieved: List[Tuple[Chunk, float]], embedding_model: Any | None = None) -> str:
+    answer = []
+    if embedding_model is None:
+        from sentence_transformers import SentenceTransformer
+        embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+
+    if _is_style_request(query, embedding_model):
+        return _stylised_answer(query, retrieved, embedding_model)
     else:
         slm_answer = _ollama_answer(build_rag_prompt(query, retrieved))
         if slm_answer:
@@ -164,7 +207,7 @@ def main() -> None:
             break
 
         retrieved = retriever.retrieve(query, top_k=DEFAULT_TOP_K)
-        answer = generate_answer(query, retrieved)
+        answer = generate_answer(query, retrieved, retriever.model)
 
         print("\n")
         print(answer)

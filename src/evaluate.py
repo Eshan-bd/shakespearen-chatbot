@@ -55,7 +55,7 @@ def create_evaluation_results() -> None:
         rag_retrieved = retriever.retrieve(question, top_k=3)
         outputs = {
             "baseline": (base_retrieved, baseline.answer(question)),
-            "rag": (rag_retrieved, generate_answer(question, rag_retrieved)),
+            "rag": (rag_retrieved, generate_answer(question, rag_retrieved, retriever.model)),
         }
 
         for system_name, (retrieved, response) in outputs.items():
