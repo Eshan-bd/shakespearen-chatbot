@@ -12,5 +12,5 @@ data/processed/*
 !data/processed/.gitkeep
 *.sqlite3
 *.bin
-instructor_questions.json
 *.csv
+chroma_retriever.json
