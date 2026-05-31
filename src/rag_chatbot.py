@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Sequence, Tuple
 from config import CHROMA_DIR, DEFAULT_TOP_K, EMBEDDING_MODEL_NAME, INDEX_PATH, OLLAMA_MODEL, PROMPT_DIR, SEMANTIC_SIMILARITY_THRESHOLD
 from data_loader import load_all_plays
 from chunking import create_chunks, format_chunk_for_display
-from retrieval import EmbeddingRetriever
+from retrieval import EmbeddingRetriever, build_retriever
 
 
 Chunk = Dict[str, Any]
@@ -190,20 +190,6 @@ def generate_evidence_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -
         answer.append("\nKey evidence:")
         answer.extend(f"- {line}" for line in evidence_lines)
     return "\n".join(answer)
-
-
-def build_retriever() -> EmbeddingRetriever:
-    if INDEX_PATH.exists():
-        retriever = EmbeddingRetriever.load(INDEX_PATH, EMBEDDING_MODEL_NAME)
-        if retriever.count() > 0:
-            return retriever
-
-    records = load_all_plays()
-    chunks = create_chunks(records)
-    retriever = EmbeddingRetriever(CHROMA_DIR, EMBEDDING_MODEL_NAME)
-    retriever.build_index(chunks)
-    retriever.save(INDEX_PATH)
-    return retriever
 
 
 def main() -> None:

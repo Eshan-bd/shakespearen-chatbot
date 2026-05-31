@@ -6,6 +6,10 @@ import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+from chunking import create_chunks
+from config import CHROMA_DIR, EMBEDDING_MODEL_NAME, INDEX_PATH
+from data_loader import load_all_plays
+
 
 Chunk = Dict[str, Any]
 
@@ -130,3 +134,17 @@ class ChromaRetriever:
 
 
 EmbeddingRetriever = ChromaRetriever
+
+
+def build_retriever() -> EmbeddingRetriever:
+    if INDEX_PATH.exists():
+        retriever = EmbeddingRetriever.load(INDEX_PATH, EMBEDDING_MODEL_NAME)
+        if retriever.count() > 0:
+            return retriever
+
+    records = load_all_plays()
+    chunks = create_chunks(records)
+    retriever = EmbeddingRetriever(CHROMA_DIR, EMBEDDING_MODEL_NAME)
+    retriever.build_index(chunks)
+    retriever.save(INDEX_PATH)
+    return retriever
