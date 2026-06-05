@@ -38,7 +38,6 @@ def create_evaluation_results() -> None:
         "question_type",
         "expected_focus",
         "system",
-        "retrieved_passages",
         "generated_response",
         "correctness_score",
         "grounding_score",
