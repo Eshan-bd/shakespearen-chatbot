@@ -148,3 +148,13 @@ def build_retriever() -> EmbeddingRetriever:
     retriever.build_index(chunks)
     retriever.save(INDEX_PATH)
     return retriever
+
+_retriever = None
+
+def get_retriever() -> EmbeddingRetriever:
+    global _retriever
+
+    if _retriever is None:
+        _retriever = build_retriever()
+
+    return _retriever

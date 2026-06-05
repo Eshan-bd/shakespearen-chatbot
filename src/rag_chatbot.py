@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Sequence, Tuple
 from config import CHROMA_DIR, DEFAULT_TOP_K_RETRIEVES, EMBEDDING_MODEL_NAME, INDEX_PATH, OLLAMA_MODEL, PROMPT_DIR, SEMANTIC_SIMILARITY_THRESHOLD
 from data_loader import load_all_plays
 from chunking import create_chunks, format_chunk_for_display
-from retrieval import EmbeddingRetriever, build_retriever
+from retrieval import EmbeddingRetriever, build_retriever, get_retriever
 
 
 Chunk = Dict[str, Any]
@@ -202,25 +202,35 @@ def generate_evidence_answer(query: str, retrieved: List[Tuple[Chunk, float]], e
         answer.extend(f"- {line}" for line in evidence_lines)
     return "\n".join(answer)
 
+class RAGChatbot:
+    def __init__(self):
+        self.retriever = get_retriever()
+
+    def query(self, p_query):
+        query = p_query.strip()
+
+        self.retrieved = self.retriever.retrieve(query, top_k=DEFAULT_TOP_K_RETRIEVES)
+        answer = generate_answer(query, self.retrieved, self.retriever.model)
+
+        return answer
+
+    def get_retriever(self):
+        return self.retriever
+
+
 
 def main() -> None:
-    retriever = build_retriever()
-
-    print(f"Shakespeare-aware RAG chatbot. Retriever backend: {retriever.backend}")
+    bot = RAGChatbot()
+    print(f"Shakespeare-aware RAG chatbot. Retriever backend: {bot.get_retriever().backend}")
     print("Type 'quit' to exit.\n")
-
     while True:
-        query = input("Query: ").strip()
+        query = input("Query: ")
         if query.lower() in {"quit", "exit"}:
             break
 
-        retrieved = retriever.retrieve(query, top_k=DEFAULT_TOP_K_RETRIEVES)
-        answer = generate_answer(query, retrieved, retriever.model)
-
         print("\n")
-        print(answer)
+        print(bot.query(query))
         print("\n")
-
 
 if __name__ == "__main__":
     main()

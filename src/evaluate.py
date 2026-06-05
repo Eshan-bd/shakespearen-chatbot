@@ -8,7 +8,7 @@ from typing import Dict, List
 from config import RESULTS_DIR
 from baseline import BaselineSystem
 from chunking import format_chunk_for_display
-from rag_chatbot import build_retriever, generate_answer
+from rag_chatbot import RAGChatbot, build_retriever, generate_answer
 
 
 QUESTIONS_PATH = RESULTS_DIR / "instructor_questions.json"
@@ -30,7 +30,7 @@ def _evidence_text(retrieved) -> str:
 def create_evaluation_results() -> None:
     questions = load_questions()
     baseline = BaselineSystem()
-    retriever = build_retriever()
+    chatbot = RAGChatbot()
 
     fieldnames = [
         "question_id",
@@ -51,28 +51,21 @@ def create_evaluation_results() -> None:
     rows = []
     for q in questions:
         question = q.get("question", "")
-        base_retrieved = baseline.retrieve(question, top_k=1)
-        rag_retrieved = retriever.retrieve(question, top_k=3)
+        baseline_reply = baseline.query(question)
+        bot_reply = chatbot.query(question)
         outputs = {
-            "baseline": (base_retrieved, baseline.answer(question)),
-            "rag": (rag_retrieved, generate_answer(question, rag_retrieved, retriever.model)),
+            "baseline": baseline_reply,
+            "rag": bot_reply 
         }
 
-        for system_name, (retrieved, response) in outputs.items():
+        for system_name, response in outputs.items():
             rows.append({
                 "question_id": q.get("question_id", ""),
                 "question": question,
                 "question_type": q.get("type", ""),
                 "expected_focus": q.get("expected_focus", ""),
                 "system": system_name,
-                "retrieved_passages": _evidence_text(retrieved),
                 "generated_response": response,
-                "correctness_score": "",
-                "grounding_score": "",
-                "retrieval_relevance_score": "",
-                "usefulness_score": "",
-                "style_quality_score": "",
-                "comments": "",
             })
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
