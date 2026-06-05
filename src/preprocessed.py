@@ -3,7 +3,7 @@ import json
 import os
 
 # Load Hamlet utterances
-file_path='/kaggle/input/datasets/pranjalsatpute231/shakespeare/shakespeare_slm_dataset/hamlet_utterances.jsonl'
+file_path='data/raw/hamlet_utterances.jsonl'
 df_hamletUt=pd.read_json(file_path, lines=True)
 
 # Clean text and remove unwanted rows
@@ -16,12 +16,12 @@ df_hamletUt = df_hamletUt[(df_hamletUt['act'] != 0) & (df_hamletUt['scene'] != 0
 print(df_hamletUt.isnull().sum())
 
 # Save cleaned Hamlet utterances
-os.makedirs('/kaggle/working/processed', exist_ok=True)
-df_hamletUt.to_json('/kaggle/working/processed/hamlet_ut.jsonl', orient='records', lines=True)
-df_hamletUt.to_json('/kaggle/working/processed/hamlet.json', orient='records', indent=2)
+os.makedirs('data/processed', exist_ok=True)
+df_hamletUt.to_json('data/processed/hamlet_ut.jsonl', orient='records', lines=True)
+df_hamletUt.to_json('data/processed/hamlet.json', orient='records', indent=2)
 
 # Load Macbeth utterances
-file_path='/kaggle/input/datasets/pranjalsatpute231/shakespeare/shakespeare_slm_dataset/macbeth_utterances.jsonl'
+file_path='data/raw/macbeth_utterances.jsonl'
 df_mcbethUt=pd.read_json(file_path, lines=True)
 
 # Clean text and remove unwanted rows
@@ -34,11 +34,11 @@ df_mcbethUt = df_mcbethUt[(df_mcbethUt['act'] != 0) & (df_mcbethUt['scene'] != 0
 print(df_mcbethUt.isnull().sum())
 
 # Save cleaned Macbeth utterances
-df_mcbethUt.to_json('/kaggle/working/processed/macbeth_ut.jsonl', orient='records', lines=True)
-df_mcbethUt.to_json('/kaggle/working/processed/macbeth.json', orient='records', indent=2)
+df_mcbethUt.to_json('data/processed/macbeth_ut.jsonl', orient='records', lines=True)
+df_mcbethUt.to_json('data/processed/macbeth.json', orient='records', indent=2)
 
 # Load Romeo and Juliet utterances
-file_path='/kaggle/input/datasets/pranjalsatpute231/shakespeare/shakespeare_slm_dataset/romeo_and_juliet_utterances.jsonl'
+file_path='data/raw/romeo_and_juliet_utterances.jsonl'
 df_romeo_julietUt=pd.read_json(file_path, lines=True)
 
 # Clean text and remove unwanted rows
@@ -49,8 +49,8 @@ df_romeo_julietUt['text'] = df_romeo_julietUt['text'].str.strip()
 df_romeo_julietUt = df_romeo_julietUt[(df_romeo_julietUt['act'] != 0) & (df_romeo_julietUt['scene'] != 0)]
 
 # Save cleaned Romeo and Juliet utterances
-df_romeo_julietUt.to_json('/kaggle/working/processed/romeo_juliet_ut.jsonl', orient='records', lines=True)
-df_romeo_julietUt.to_json('/kaggle/working/processed/romeo_and_juliet.json', orient='records', indent=2)
+df_romeo_julietUt.to_json('data/processed/romeo_juliet_ut.jsonl', orient='records', lines=True)
+df_romeo_julietUt.to_json('data/processed/romeo_and_juliet.json', orient='records', indent=2)
 
 # Print chunk size stats
 print("Hamlet utterances:", len(df_hamletUt))
